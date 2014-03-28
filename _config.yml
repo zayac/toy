@@ -1,0 +1,4 @@
+name: Toy OS blog
+markdown: redcarpet
+pygments: true
+baseurl: /toy
