@@ -1,0 +1,14 @@
+OUTPUT_FORMAT(elf64-x86-64)
+ENTRY(__bstart32)
+SECTIONS {
+  . = 0x100000;
+  .mbh : { *(.mbh) }
+  .text : { *(.text) }
+  .rodata : { *(.rodata*) }
+  .data : { *(.data) }
+  .bss : {
+    *(.bss)
+    __lds_kernel_size = . - 0x10000;
+  }
+  /DISCARD/ : { *(*) }
+}

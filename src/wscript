@@ -1,0 +1,17 @@
+def options(opt):
+    opt.load('compiler_cxx')
+    grp = opt.get_option_group('configure options')
+    grp.add_option('--arch', action='store', default='x86_64', dest='arch',
+                   help="machine architecture [default: 'x86_64']")
+
+
+def configure(cnf):
+    cnf.load('compiler_cxx')
+    cnf.env.arch = cnf.options.arch
+    cnf.env.append_value('CXXFLAGS', '-D'+cnf.env.arch.upper())
+    cnf.recurse(cnf.env.arch)
+
+
+def build(bld):
+    bld.load('compiler_cxx')
+    bld.recurse(bld.env.arch)

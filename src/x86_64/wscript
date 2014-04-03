@@ -1,0 +1,30 @@
+def options(opt):
+    pass
+
+
+def configure(cnf):
+    cnf.find_program('objcopy')
+    cnf.env.prepend_value('CXXFLAGS', '-m64')
+
+
+def build_kernel(bld):
+    env = bld.env.derive()
+    env.CXXFLAGS = ['-m32' if f == '-m64' else f for f in env.CXXFLAGS]
+    boot32 = bld.objects(source='boot32.cc', target='boot32.o', env=env)
+    boot32.post()
+
+    bld(rule='objcopy -O elf64-x86-64 ${SRC} ${TGT}',
+        source=boot32.tasks[0].outputs[0], target='boot32_64.o')
+
+    objects = bld.objects(
+        source=bld.path.ant_glob('**/*.cc', excl='boot32.cc'))
+    objects.post()
+
+    source = ['boot32_64.o'] + [t.outputs[0] for t in objects.tasks]
+    bld(rule='${CXX} ${LDFLAGS} ${SRC} -o ${TGT}', source=source,
+        target='kernel.bin')
+
+
+def build(bld):
+    bld.load('compiler_cxx')
+    build_kernel(bld)
