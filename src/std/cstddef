@@ -1,0 +1,12 @@
+#ifndef __STD_CSTDDEF_
+#define __STD_CSTDDEF_
+
+#include <stdint.h>
+
+namespace std {
+
+  using ::size_t;
+
+}
+
+#endif // __STD_CSTDEF_

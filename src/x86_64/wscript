@@ -4,7 +4,8 @@ def options(opt):
 
 def configure(cnf):
     cnf.find_program('objcopy')
-    cnf.env.prepend_value('CXXFLAGS', '-m64')
+    cnf.env.append_value('CXXFLAGS', '-m64')
+    cnf.env.append_value('LDFLAGS', '-T %s/kernel.lds' % cnf.path.abspath())
 
 
 def build_kernel(bld):
@@ -14,7 +15,8 @@ def build_kernel(bld):
     boot32.post()
 
     bld(rule='objcopy -O elf64-x86-64 ${SRC} ${TGT}',
-        source=boot32.tasks[0].outputs[0], target='boot32_64.o')
+        source=boot32.tasks[0].outputs[0], target='boot32_64.o',
+        name='boot32 elf32->elf64')
 
     objects = bld.objects(
         source=bld.path.ant_glob('**/*.cc', excl='boot32.cc'))
@@ -22,9 +24,8 @@ def build_kernel(bld):
 
     source = ['boot32_64.o'] + [t.outputs[0] for t in objects.tasks]
     bld(rule='${CXX} ${LDFLAGS} ${SRC} -o ${TGT}', source=source,
-        target='kernel.bin')
+        target='kernel.bin', name='link kernel')
 
 
 def build(bld):
-    bld.load('compiler_cxx')
     build_kernel(bld)

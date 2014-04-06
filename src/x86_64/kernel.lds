@@ -8,7 +8,7 @@ SECTIONS {
   .data : { *(.data) }
   .bss : {
     *(.bss)
-    __lds_kernel_size = . - 0x10000;
+    __kernel_size = . - 0x100000;
   }
   /DISCARD/ : { *(*) }
 }
