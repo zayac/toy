@@ -2,26 +2,32 @@ def options(opt):
     opt.load('compiler_cxx')
 
     grp = opt.get_option_group('configure options')
+    grp.add_option('--cxx', action='store', default='g++', dest='cxx',
+                   help="C++ compiler to use [default: 'g++']")
     grp.add_option('--arch', action='store', default='x86_64', dest='arch',
                    help="machine architecture [default: 'x86_64']")
     grp.add_option('--opt', action='store', default='3', dest='opt',
                    help="code optimization [default: 3]")
 
+    opt.recurse('x86_64')
+
 
 def configure(cnf):
+    cnf.env.arch = cnf.options.arch
+    cnf.env.CXX = cnf.options.cxx
     cnf.load('compiler_cxx')
 
-    cnf.env.arch = cnf.options.arch
-    cnf.env.append_value('CXXFLAGS', '-D'+cnf.env.arch.upper())
+    cnf.env.append_value('CXXFLAGS', '-D __ARCH='+cnf.env.arch.upper())
     cnf.env.append_value('CXXFLAGS', '-std=c++0x')
     cnf.env.append_value('CXXFLAGS', '-fno-stack-protector')
     cnf.env.append_value('CXXFLAGS', '-O' + cnf.options.opt)
     cnf.env.append_value('CXXFLAGS', ['-Wall', '-Wextra',
                                       '-Wno-missing-field-initializers'])
+    cnf.env.append_value('CXXFLAGS', ['-nostdinc', '-nostdinc++',
+                                      '-ffreestanding'])
     cnf.env.append_value('CXXFLAGS', ['-I%s' % cnf.path.abspath(),
+                                      '-I%s/std' % cnf.path.abspath(),
                                       '-I%s/third_party' % cnf.path.abspath()])
-    cnf.env.append_value('CXXFLAGS', ['-isystem=%s/std' % cnf.path.abspath(),
-                                      '-nostdinc'])
 
     cnf.env.append_value('LDFLAGS', '-nostdlib')
     cnf.env.append_value('LDFLAGS', '-Wl,--build-id=none')
@@ -32,3 +38,6 @@ def configure(cnf):
 def build(bld):
     bld.load('compiler_cxx')
     bld.recurse(bld.env.arch)
+
+def run(run):
+    run.recurse(run.env.arch)

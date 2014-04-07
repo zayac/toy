@@ -9,7 +9,7 @@ using namespace toy::x86_64;
 
 const multiboot_uint32_t kMultibootHeaderFlags = MULTIBOOT_MEMORY_INFO;
 
-__attribute__((section(".mbh")))
+__attribute__((section(".mbh"), used))
 const struct multiboot_header __multiboot_header = {
   MULTIBOOT_HEADER_MAGIC, kMultibootHeaderFlags,
   -(MULTIBOOT_HEADER_MAGIC + kMultibootHeaderFlags)
@@ -27,8 +27,8 @@ void BStart32() {
   __asm__(R"!!!(
 
 .text
-.global __bstart32
 
+.global __bstart32
 __bstart32:
 
   movl %0, %%esp
@@ -52,6 +52,7 @@ __halt:
 
 }
 
-extern "C" void __boot32(void) {
+extern "C" void __boot32() {
+  *(char*)0xB8000 = '!';
 
 }

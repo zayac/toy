@@ -1,14 +1,25 @@
 def options(opt):
-    pass
+    grp = opt.add_option_group('run options (x86_64)')
+    grp.add_option('-t', action='store_true', default=False, dest='term',
+                   help='redirect output into terminal')
+    grp.add_option('--kvm', action='store_true', default=False, dest='kvm',
+                   help='run kernel using KVM')
 
 
 def configure(cnf):
     cnf.find_program('objcopy')
+    cnf.find_program('xorriso')
+    cnf.find_program('grub-mkrescue')
+    cnf.find_program('qemu-system-x86_64')
+    cnf.find_program('screen', mandatory=False)
+    cnf.find_program('kvm', mandatory=False)
+
     cnf.env.append_value('CXXFLAGS', '-m64')
-    cnf.env.append_value('LDFLAGS', '-T %s/kernel.lds' % cnf.path.abspath())
+    cnf.env.append_value('LDFLAGS', '-Wl,-T %s/kernel.lds' %cnf.path.abspath())
+    cnf.env.append_value('LDFLAGS', ['-Wl,-z', '-Wl,max-page-size=0x1'])
 
 
-def build_kernel(bld):
+def build(bld):
     env = bld.env.derive()
     env.CXXFLAGS = ['-m32' if f == '-m64' else f for f in env.CXXFLAGS]
     boot32 = bld.objects(source='boot32.cc', target='boot32.o', env=env)
@@ -27,5 +38,20 @@ def build_kernel(bld):
         target='kernel.bin', name='link kernel')
 
 
-def build(bld):
-    build_kernel(bld)
+def run(run):
+    build(run)
+
+    boot = run.path.get_bld().make_node('iso/boot')
+    config = boot.make_node('grub/grub.cfg')
+    kernel = boot.make_node('toy.bin')
+
+    run(rule='cp ${SRC} ${TGT}', source='grub.cfg', target=config)
+    run(rule='cp ${SRC} ${TGT}', source='kernel.bin', target=kernel)
+    run(rule='grub-mkrescue -o ${TGT} --diet %s' % boot.parent.abspath(),
+        source=[config, kernel], target='toy.iso')
+
+    options = '' if run.options.kvm else '-no-kvm'
+
+    rule = 'qemu-system-x86_64 -cdrom ${SRC} -boot d %s' % options
+    if run.options.term: rule = 'screen %s -curses' % rule
+    run(rule=rule, source='toy.iso', name='running kernel', always=True)
